@@ -3,3 +3,4 @@
 .jbeval
 docker
 /.jbeval/
+__pycache__/

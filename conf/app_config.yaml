@@ -19,7 +19,7 @@ db_meta:
 db_dw:
   host: localhost
   port: 3306
-  user: atguigu
+  user: atguigu +
   password: <password>
   database: dw
 
