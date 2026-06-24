@@ -1,4 +1,6 @@
 import asyncio
+from typing import Optional
+
 from elasticsearch import AsyncElasticsearch
 
 from app.conf.app_config import ESConfig, app_config
@@ -6,7 +8,7 @@ from app.conf.app_config import ESConfig, app_config
 
 class ESClientManager:
     def __init__(self,config:ESConfig):
-        self.client: AsyncElasticsearch | None = None
+        self.client: Optional[AsyncElasticsearch] = None
         self.config = config
 
     def __get_url(self):

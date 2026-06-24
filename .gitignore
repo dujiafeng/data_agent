@@ -4,3 +4,4 @@
 docker
 /.jbeval/
 __pycache__/
+logs/
