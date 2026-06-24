@@ -5,10 +5,12 @@ from pathlib import Path
 from langchain_openai import OpenAIEmbeddings
 from omegaconf import OmegaConf
 
-from app.clients.embedding_client_manager import embedding_client_manager
+from app.core.log import logger
 from app.conf.mate_config import MetaConfig
 from app.entities.column_info import ColumnInfo
 from app.entities.table_info import TableInfo
+from app.entities.value_info import ValueInfo
+from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
 from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantRepository
@@ -16,17 +18,21 @@ from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantReposit
 
 class MetaKnowledgeService:
     def __init__(self, meta_mysql_repository: MetaMySQLRepository, dw_mysql_repository: DWMySQLRepository,
-                 column_qdrant_repository: ColumnQdrantRepository, embedding_client: OpenAIEmbeddings):
+                 column_qdrant_repository: ColumnQdrantRepository, embedding_client: OpenAIEmbeddings,
+                 value_es_repository: ValueESRepository):
         self.meta_mysql_repository: MetaMySQLRepository = meta_mysql_repository
         self.dw_mysql_repository: DWMySQLRepository = dw_mysql_repository
         self.column_qdrant_repository: ColumnQdrantRepository = column_qdrant_repository
         self.embedding_client: OpenAIEmbeddings = embedding_client
+        self.value_es_repository: ValueESRepository = value_es_repository
 
     async def build(self, config_path: Path):
         # 1.读取配置文件
+        logger.info("加载元数据配置文件: {}", config_path)
         context = OmegaConf.load(config_path)
         schema = OmegaConf.structured(MetaConfig)
         meta_config: MetaConfig = OmegaConf.to_object(OmegaConf.merge(schema, context))
+        logger.info("配置加载完成，共 {} 张表, {} 个指标", len(meta_config.tables or []), len(meta_config.metrics or []))
 
         # 2. 根据配置文件同步指定的表信息和指标信息
         if meta_config.tables:
@@ -55,6 +61,7 @@ class MetaKnowledgeService:
             async with self.meta_mysql_repository.session.begin():
                 self.meta_mysql_repository.save_table_infos(table_infos)
                 self.meta_mysql_repository.save_column_infos(column_infos)
+                logger.info("表信息已持久化: {} 张表, {} 个字段", len(table_infos), len(column_infos))
 
             # 2.2 对字段信息简历向量索引
             await self.column_qdrant_repository.ensure_collection()
@@ -80,6 +87,7 @@ class MetaKnowledgeService:
                         'payload': asdict(column_info),
                     })
             # 向量化
+            logger.info("开始向量化 {} 个文本片段", len(points))
             embeddings: list[list[float]] = []
             embedding_texts = [point['embedding_text'] for point in points]
             embedding_batch_size = 20
@@ -87,14 +95,32 @@ class MetaKnowledgeService:
                 embedding_texts_batch = embedding_texts[i:i + embedding_batch_size]
                 embedding_results = await self.embedding_client.aembed_documents(embedding_texts_batch)
                 embeddings.extend(embedding_results)
+                logger.debug("向量化批次 {}/{} 完成", i // embedding_batch_size + 1, (len(embedding_texts) - 1) // embedding_batch_size + 1)
 
             ids = [point['id'] for point in points]
             payloads = [point['payload'] for point in points]
 
-            await self.column_qdrant_repository.upsert(ids,embeddings,payloads)
-
-
+            await self.column_qdrant_repository.upsert(ids, embeddings, payloads)
+            logger.info("字段向量已写入 Qdrant 集合 '{}'", self.column_qdrant_repository.collection_name)
             # 2.3 对指定的维度字段取值建立全文索引
+            await self.value_es_repository.ensure_index()
+            value_infos: list[ValueInfo] = []
+            for table in meta_config.tables:
+                for column in table.columns:
+                    if not column.sync:
+                        break
+                    # 查询字段取值
+                    current_column_values = await self.dw_mysql_repository.get_column_values(table.name, column.name,
+                                                                                             100000)
+                    current_column_infos = [ValueInfo(id=f'{table.name}.{column.name}.{current_column_value}', value=current_column_value,
+                               column_id=f'{table.name}.{column.name}') for current_column_value in
+                     current_column_values]
+
+                    value_infos.extend(current_column_infos)
+
+            logger.info("开始写入 {} 个字段取值到 ES", len(value_infos))
+            await self.value_es_repository.index(value_infos)
+
         # 3 根据配置文件同步指定的指标信息
         if meta_config.metrics:
             pass
