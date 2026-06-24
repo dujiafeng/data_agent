@@ -124,6 +124,6 @@ if __name__ == '__main__':
         print(resp)
         await es_client_manager.close()
 
-asyncio.run(test())
+    asyncio.run(test())
 
 
