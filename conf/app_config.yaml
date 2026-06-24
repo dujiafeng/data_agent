@@ -31,7 +31,7 @@ qdrant:
 embedding:
   host: 127.0.0.1
   port: 8081
-  model: BAAI/bge-large-zh-v1.5
+  model: text-embedding-v4
 
 es:
   host: 127.0.0.1
