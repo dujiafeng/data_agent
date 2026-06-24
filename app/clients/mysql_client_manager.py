@@ -18,7 +18,7 @@ class MySQLClientManager:
 
     def init(self):
         self.engine = create_async_engine(self._get_url(), pool_size=10, pool_pre_ping=True)
-        self.session_factory= async_sessionmaker(self.engine, autoflush=True, expire_on_commit=False)
+        self.session_factory = async_sessionmaker(self.engine, autoflush=True, expire_on_commit=False, autobegin=False)
 
     async def close(self):
         await self.engine.dispose()
