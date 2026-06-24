@@ -63,3 +63,5 @@ if __name__ == "__main__":
         await qdrant_client_manager.close()
 
     asyncio.run(test())
+
+
