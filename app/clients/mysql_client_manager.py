@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession, async_sessionmaker
@@ -8,7 +9,7 @@ from app.conf.app_config import DBConfig, app_config
 
 class MySQLClientManager:
     def __init__(self, config: DBConfig):
-        self.engine: AsyncEngine | None = None
+        self.engine: Optional[AsyncEngine] = None
         self.session_factory = None
         self.config:DBConfig = config
 

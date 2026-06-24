@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 
 from langchain_openai import OpenAIEmbeddings
 
@@ -7,7 +8,7 @@ from app.conf.app_config import EmbeddingConfig, app_config
 
 class EmbeddingClientManager:
     def __init__(self, config: EmbeddingConfig):
-        self.client: OpenAIEmbeddings | None = None
+        self.client: Optional[OpenAIEmbeddings] = None
         self.config = config
 
     def _get_url(self):

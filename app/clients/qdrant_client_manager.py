@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.models import VectorParams, Distance, PointStruct, Document
@@ -8,7 +9,7 @@ from app.conf.app_config import QdrantConfig, app_config
 
 class QdrantClientManager:
     def __init__(self, config: QdrantConfig):
-        self.client: AsyncQdrantClient | None = None
+        self.client: Optional[AsyncQdrantClient] = None
         self.config: QdrantConfig = config
 
     def __get_url(self) -> str:
