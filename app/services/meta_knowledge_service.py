@@ -2,11 +2,14 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 from app.conf.mate_config import MetaConfig
+from app.entities.column_info import ColumnInfo
+from app.entities.table_info import TableInfo
 from app.models.column_info import ColumnInfoMySQL
 from app.models.table_info import TableInfoMySQL
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
 from app.core.log import logger
+
 
 class MetaKnowledgeService:
     def __init__(self, meta_mysql_repository: MetaMySQLRepository, dw_mysql_repository: DWMySQLRepository):
@@ -21,27 +24,27 @@ class MetaKnowledgeService:
 
         # 2. 根据配置文件同步指定的表信息和指标信息
         if meta_config.tables:
-            table_infos: list[TableInfoMySQL] = []
-            column_infos: list[ColumnInfoMySQL] = []
+            table_infos: list[TableInfo] = []
+            column_infos: list[ColumnInfo] = []
             # 2.1 将表信息和字段信息保存到数据库中
             for table in meta_config.tables:
-                table_info = TableInfoMySQL(id=table.name,
-                                            name=table.name,
-                                            description=table.description, )
+                table_info = TableInfo(id=table.name,
+                                       name=table.name,
+                                       role=table.role,
+                                       description=table.description, )
                 table_infos.append(table_info)
                 column_types = await self.dw_mysql_repository.get_column_types(table.name)
                 for column in table.columns:
-                    column_values = await self.dw_mysql_repository.get_column_values(table.name,column.name)
-                    column_info = ColumnInfoMySQL(id=f"{table.name}.{column.name}",
-                                                  name=column.name,
-                                                  type=column_types[column.name],
-                                                  role=column.role,
-                                                  examples=column_values,
-                                                  description=column.description,
-                                                  alias=column.alias,
-                                                  table_id=table.name,)
+                    column_values = await self.dw_mysql_repository.get_column_values(table.name, column.name)
+                    column_info = ColumnInfo(id=f"{table.name}.{column.name}",
+                                             name=column.name,
+                                             type=column_types[column.name],
+                                             role=column.role,
+                                             examples=column_values,
+                                             description=column.description,
+                                             alias=column.alias,
+                                             table_id=table.name, )
                     column_infos.append(column_info)
-                    logger.info(f"name:{column_info.name}, examples:{column_values}")
 
             async with self.meta_mysql_repository.session.begin():
                 self.meta_mysql_repository.save_table_infos(table_infos)
