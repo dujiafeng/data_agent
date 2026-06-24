@@ -26,4 +26,3 @@ if app_config.logging.file.enable:
         retention=app_config.logging.file.retention,
         encoding="utf-8"
 )
-
