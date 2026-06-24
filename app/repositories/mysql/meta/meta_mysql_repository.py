@@ -19,22 +19,6 @@ class MetaMySQLRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_existing_table_ids(self) -> set[str]:
-        result = await self.session.execute(select(TableInfoMySQL.id))
-        return {row[0] for row in result.fetchall()}
-
-    async def get_existing_column_ids(self) -> set[str]:
-        result = await self.session.execute(select(ColumnInfoMySQL.id))
-        return {row[0] for row in result.fetchall()}
-
-    async def get_existing_metric_ids(self) -> set[str]:
-        result = await self.session.execute(select(MetricInfoMySQL.id))
-        return {row[0] for row in result.fetchall()}
-
-    async def get_existing_column_metric_ids(self) -> set[tuple[str, str]]:
-        result = await self.session.execute(select(ColumnMetricMySQL.column_id, ColumnMetricMySQL.metric_id))
-        return {(row[0], row[1]) for row in result.fetchall()}
-
     def save_table_infos(self, table_infos: list[TableInfo]):
         self.session.add_all([TableInfoMapper.to_model(table_info) for table_info in table_infos])
 

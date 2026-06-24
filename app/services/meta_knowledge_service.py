@@ -38,14 +38,6 @@ class MetaKnowledgeService:
         table_infos: list[TableInfo] = []
         column_infos: list[ColumnInfo] = []
 
-        # 检查已存在的记录
-        existing_table_ids = await self.meta_mysql_repository.get_existing_table_ids()
-        existing_column_ids = await self.meta_mysql_repository.get_existing_column_ids()
-        if existing_table_ids:
-            logger.warning("表信息表中已存在 {} 条记录: {}", len(existing_table_ids), existing_table_ids)
-        if existing_column_ids:
-            logger.warning("字段信息表中已存在 {} 条记录", len(existing_column_ids))
-
         for table in meta_config.tables:
             logger.info("处理表: {} ({})", table.name, table.role)
             # table -> table_info
@@ -75,8 +67,9 @@ class MetaKnowledgeService:
                 column_infos.append(column_info)
 
         logger.info("待写入: {} 张表, {} 个字段", len(table_infos), len(column_infos))
-        self.meta_mysql_repository.save_table_infos(table_infos)
-        self.meta_mysql_repository.save_column_infos(column_infos)
+        async with self.meta_mysql_repository.session.begin():
+            self.meta_mysql_repository.save_table_infos(table_infos)
+            self.meta_mysql_repository.save_column_infos(column_infos)
         logger.info("表信息写入 meta 数据库完成")
 
         return column_infos
@@ -154,11 +147,6 @@ class MetaKnowledgeService:
         metric_infos: list[MetricInfo] = []
         column_metrics: list[ColumnMetric] = []
 
-        # 检查已存在的记录
-        existing_metric_ids = await self.meta_mysql_repository.get_existing_metric_ids()
-        if existing_metric_ids:
-            logger.warning("指标信息表中已存在 {} 条记录: {}", len(existing_metric_ids), existing_metric_ids)
-
         for metric in meta_config.metrics:
             logger.info("处理指标: {} - {}", metric.name, metric.description)
             # metric->MetricInfo
@@ -180,8 +168,9 @@ class MetaKnowledgeService:
                 column_metrics.append(column_metric)
 
         logger.info("待写入: {} 个指标, {} 条关联关系", len(metric_infos), len(column_metrics))
-        self.meta_mysql_repository.save_metric_infos(metric_infos)
-        self.meta_mysql_repository.save_column_metrics(column_metrics)
+        async with self.meta_mysql_repository.session.begin():
+            self.meta_mysql_repository.save_metric_infos(metric_infos)
+            self.meta_mysql_repository.save_column_metrics(column_metrics)
         logger.info("指标信息写入 meta 数据库完成")
 
         return metric_infos
