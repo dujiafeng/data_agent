@@ -34,7 +34,7 @@ embedding:
   model: BAAI/bge-large-zh-v1.5
 
 es:
-  host: localhost
+  host: 127.0.0.1
   port: 9200
   index_name: data_agent
 
