@@ -1,24 +1,26 @@
 import asyncio
+import os
 from typing import Optional
 
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import DashScopeEmbeddings
 
 from app.conf.app_config import EmbeddingConfig, app_config
 
+from dotenv import load_dotenv
+load_dotenv()
 
 class EmbeddingClientManager:
     def __init__(self, config: EmbeddingConfig):
-        self.client: Optional[OpenAIEmbeddings] = None
+        self.client: Optional[DashScopeEmbeddings] = None
         self.config = config
 
     def _get_url(self):
         return f"http://{self.config.host}:{self.config.port}"
 
     def init(self):
-        self.client = OpenAIEmbeddings(
-            base_url=self._get_url(),
+        self.client = DashScopeEmbeddings(
             model=self.config.model,
-            api_key="not-needed")
+            dashscope_api_key=os.getenv("DASHSCOPE_API_KEY"),)
 
 
 embedding_client_manager = EmbeddingClientManager(app_config.embedding)
@@ -30,7 +32,7 @@ if __name__ == '__main__':
 
     async def test():
         text = "What is deep learning?"
-        query_result = await client.aembed_query(text)
+        query_result = await client.aembed_documents([text])
         print(query_result[:3])
 
 

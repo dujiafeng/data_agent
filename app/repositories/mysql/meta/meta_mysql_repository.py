@@ -1,9 +1,14 @@
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.entities.column_info import ColumnInfo
 from app.entities.column_metric import ColumnMetric
 from app.entities.metric_info import MetricInfo
 from app.entities.table_info import TableInfo
+from app.models.column_info import ColumnInfoMySQL
+from app.models.column_metric import ColumnMetricMySQL
+from app.models.metric_info import MetricInfoMySQL
+from app.models.table_info import TableInfoMySQL
 from app.repositories.mysql.meta.mappers.column_info_mapper import ColumnInfoMapper
 from app.repositories.mysql.meta.mappers.column_metric_mapper import ColumnMetricMapper
 from app.repositories.mysql.meta.mappers.metric_info_mapper import MetricInfoMapper
@@ -13,6 +18,22 @@ from app.repositories.mysql.meta.mappers.table_info_mapper import TableInfoMappe
 class MetaMySQLRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def get_existing_table_ids(self) -> set[str]:
+        result = await self.session.execute(select(TableInfoMySQL.id))
+        return {row[0] for row in result.fetchall()}
+
+    async def get_existing_column_ids(self) -> set[str]:
+        result = await self.session.execute(select(ColumnInfoMySQL.id))
+        return {row[0] for row in result.fetchall()}
+
+    async def get_existing_metric_ids(self) -> set[str]:
+        result = await self.session.execute(select(MetricInfoMySQL.id))
+        return {row[0] for row in result.fetchall()}
+
+    async def get_existing_column_metric_ids(self) -> set[tuple[str, str]]:
+        result = await self.session.execute(select(ColumnMetricMySQL.column_id, ColumnMetricMySQL.metric_id))
+        return {(row[0], row[1]) for row in result.fetchall()}
 
     def save_table_infos(self, table_infos: list[TableInfo]):
         self.session.add_all([TableInfoMapper.to_model(table_info) for table_info in table_infos])
