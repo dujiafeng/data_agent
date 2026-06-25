@@ -2,6 +2,7 @@ from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.http.models import PointStruct
 
 from app.conf.app_config import app_config
+from app.entities.column_info import ColumnInfo
 
 
 class ColumnQdrantRepository:
@@ -22,3 +23,14 @@ class ColumnQdrantRepository:
         point_structs: list[PointStruct] = [PointStruct(id=id, vector=embedding, payload=payload) for
                                             id, embedding, payload in zip(ids, embeddings, payloads)]
         await self.client.upsert(collection_name=self.collection_name, points=point_structs)
+
+    async def search(self, embedding: list[float], score_threshold: float = 0.6, limit: int = 20) -> list[ColumnInfo]:
+        # 查询数据
+        result = await self.client.query_points(
+            collection_name=self.collection_name,
+            query=embedding,
+            limit=limit,
+            score_threshold=score_threshold
+        )
+        return [ColumnInfo(**point.payload) for point in result.points]
+

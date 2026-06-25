@@ -29,6 +29,7 @@ async def extract_keywords(state: DataAgentState, runtime: Runtime[DataAgentCont
 
     keywords = jieba.analyse.extract_tags(query, allowPOS=allow_pos)
 
+    # 将原始查询加到关键词列表中，然后去重
     keywords = list(set(keywords + [query]))
     logger.info(f"抽取关键词: {keywords}")
     return {"keywords": keywords}
