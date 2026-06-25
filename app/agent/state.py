@@ -55,4 +55,7 @@ class DataAgentState(TypedDict):
     date_info: DateInfoState
     db_info: DBInfoState
 
+    # sql语句
+    sql: str
+
     error: str  # 校验SQL时出现的错误信息
