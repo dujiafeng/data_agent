@@ -29,5 +29,8 @@ class DWMySQLRepository:
 
         dialect = self.session.bind.dialect.name
 
-        return DBInfoState(dialect=dialect,version=version)
+        return DBInfoState(dialect=dialect, version=version)
 
+    async def validate(self, sql: str):
+        sql = f"explain {sql}"
+        await self.session.execute(text(sql))
