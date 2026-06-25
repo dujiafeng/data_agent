@@ -40,4 +40,4 @@ async def recall_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
     metric_column_infos: list[MetricInfo] = list(metric_info_map.values())
 
     logger.info(f"检索到指标信息：{list(metric_info_map.keys())}")
-    return {"metric_column_infos": metric_column_infos}
+    return {"retrieved_metric_infos": metric_column_infos}
