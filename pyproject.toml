@@ -16,7 +16,6 @@ dependencies = [
     "langchain-deepseek>=1.0.1",
     "langchain-huggingface>=1.2.0",
     "langgraph>=1.0.7",
-    "logger",
     "loguru>=0.7.3",
     "omegaconf>=2.3.0",
     "pyyaml>=6.0.3",
