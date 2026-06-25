@@ -20,6 +20,7 @@ from app.agent.state import DataAgentState
 from app.clients.embedding_client_manager import embedding_client_manager
 from app.clients.qdrant_client_manager import qdrant_client_manager
 from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantRepository
+from app.repositories.qdrant.metric_qdrant_repository import MetricQdrantRepository
 
 graph_builder = StateGraph(state_schema=DataAgentState, context_schema=DataAgentState)
 
@@ -65,10 +66,13 @@ if __name__ == "__main__":
     async def test():
         qdrant_client_manager.init()
         column_qdrant_repository = ColumnQdrantRepository(qdrant_client_manager.client)
+        metric_qdrant_repository = MetricQdrantRepository(qdrant_client_manager.client)
+
         embedding_client_manager.init()
 
         state = DataAgentState(query="查询华北地区的销售总额")
         context = DataAgentContext(column_qdrant_repository=column_qdrant_repository,
+                                   metric_qdrant_repository=metric_qdrant_repository,
                                    embedding_client=embedding_client_manager.client)
         async for chunk in graph.astream(input=state, context=context, stream_mode="custom"):
             print(chunk, flush=True)
