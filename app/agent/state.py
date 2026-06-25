@@ -28,6 +28,16 @@ class MetricInfoState(TypedDict):
     alias: list[str]
 
 
+class DateInfoState(TypedDict):
+    date: str
+    weekday: str
+    quarter: str  # 季度
+
+
+class DBInfoState(TypedDict):
+    version: str
+    dialect: str
+
 class DataAgentState(TypedDict):
     query: str  # 用户输入的查询
     keywords: list[str]  # 抽取的关键词
@@ -40,5 +50,9 @@ class DataAgentState(TypedDict):
     # 合并之后信息
     table_infos: list[TableInfoState]
     metric_infos: list[MetricInfoState]
+
+    # 额外信息
+    date_info: DateInfoState
+    db_info: DBInfoState
 
     error: str  # 校验SQL时出现的错误信息
