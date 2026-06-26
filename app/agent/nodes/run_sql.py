@@ -8,11 +8,18 @@ from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
 
 async def run_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]):
     writer = runtime.stream_writer
-    writer("执行SQL")
+    writer({"type": "progress", "step": "执行SQL", "status": "running"})
 
-    sql = state['sql']
-    dw_mysql_repository:DWMySQLRepository = runtime.context["dw_mysql_repository"]
+    try:
+        sql = state['sql']
+        dw_mysql_repository: DWMySQLRepository = runtime.context["dw_mysql_repository"]
 
-    result = await dw_mysql_repository.run(sql)
+        result = await dw_mysql_repository.run(sql)
 
-    logger.info(f"SQL执行结果：{result}")
+        logger.info(f"SQL执行结果：{result}")
+        writer({"type": "progress", "step": "执行SQL", "status": "success"})
+        writer({"type": "result", "data": result})
+    except Exception as e:
+        logger.info(f"执行SQL失败: {e}")
+        writer({"type": "progress", "step": "执行SQL", "status": "error"})
+        raise
