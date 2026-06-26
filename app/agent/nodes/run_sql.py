@@ -18,7 +18,7 @@ async def run_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]):
 
         logger.info(f"SQL执行结果：{result}")
         writer({"type": "progress", "step": "执行SQL", "status": "success"})
-        writer({"type": "result", "result": result})
+        writer({"type": "result", "data": result})
     except Exception as e:
         logger.info(f"执行SQL失败: {e}")
         writer({"type": "progress", "step": "执行SQL", "status": "error"})
