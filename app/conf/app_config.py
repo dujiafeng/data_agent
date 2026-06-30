@@ -64,6 +64,7 @@ class AppConfig:
     embedding: EmbeddingConfig
     es: ESConfig
     llm: LLMConfig
+    keyword_llm: LLMConfig
 
 config_file = Path(__file__).parents[2] / 'conf' / 'app_config.yaml'
 context = OmegaConf.load(config_file)
