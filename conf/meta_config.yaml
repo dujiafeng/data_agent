@@ -15,6 +15,12 @@ tables:
         alias: [省份, 省, 所在省份]
         sync: true
 
+      - name: city
+        role: dimension
+        description: 订单所属的城市名称。
+        alias: [城市, 市, 所在城市]
+        sync: true
+
       - name: region_name
         role: dimension
         description: 订单所属的大区名称，如华东、华南等。
@@ -39,21 +45,39 @@ tables:
 
       - name: customer_name
         role: dimension
-        description: 客户名称。
-        alias: [客户名称, 用户名称]
+        description: 客户姓名。
+        alias: [客户名称, 用户名称, 客户姓名]
         sync: true
 
       - name: gender
         role: dimension
         description: 客户性别。
-        alias: [性别]
+        alias: [性别, 客户性别]
         sync: true
+
+      - name: age
+        role: dimension
+        description: 客户年龄，用于年龄维度分析。
+        alias: [年龄, 客户年龄]
+        sync: false
 
       - name: member_level
         role: dimension
-        description: 客户会员等级。
-        alias: [会员等级, 用户等级]
+        description: 客户会员等级，如普通会员、银卡会员等。
+        alias: [会员等级, 用户等级, 会员级别]
         sync: true
+
+      - name: phone
+        role: dimension
+        description: 客户联系电话。
+        alias: [电话, 手机号, 联系电话]
+        sync: false
+
+      - name: register_time
+        role: dimension
+        description: 客户注册时间。
+        alias: [注册时间, 注册日期]
+        sync: false
 
   - name: dim_product
     role: dim
@@ -73,8 +97,8 @@ tables:
 
       - name: category
         role: dimension
-        description: 商品所属品类。
-        alias: [商品类别, 品类, 分类]
+        description: 商品所属品类，如电子产品、服装鞋帽等。
+        alias: [商品类别, 品类, 产品分类, 类目]
         sync: true
 
       - name: brand
@@ -83,48 +107,102 @@ tables:
         alias: [品牌, 品牌名称]
         sync: true
 
+      - name: price
+        role: dimension
+        description: 商品单价。
+        alias: [单价, 商品价格, 售价]
+        sync: false
+
+      - name: cost_price
+        role: dimension
+        description: 商品成本价。
+        alias: [成本价, 成本]
+        sync: false
+
+      - name: weight_g
+        role: dimension
+        description: 商品重量，单位克。
+        alias: [重量, 商品重量]
+        sync: false
+
   - name: dim_date
     role: dim
     description: 时间维度表，用于多时间粒度分析。
     columns:
       - name: date_id
         role: primary_key
-        description: 日期唯一标识，格式 yyyyMMdd。
-        alias: [日期ID, 日期]
+        description: 日期唯一标识。
+        alias: [日期ID]
         sync: false
 
       - name: year
         role: dimension
-        description: 年份。
+        description: 年份，如2025、2026。
         alias: [年, 年份]
         sync: false
 
       - name: quarter
         role: dimension
-        description: 季度。
-        alias: [季度]
+        description: 季度，如Q1、Q2、Q3、Q4。
+        alias: [季度, 季]
         sync: true
 
       - name: month
         role: dimension
-        description: 月份。
+        description: 月份，取值范围1-12。
         alias: [月, 月份]
         sync: false
 
       - name: day
         role: dimension
-        description: 日。
-        alias: [日, 天]
+        description: 日期中的日，取值范围1-31。
+        alias: [日, 天, 号]
         sync: false
+
+      - name: week_of_year
+        role: dimension
+        description: 一年中的第几周。
+        alias: [周数, 年周]
+        sync: false
+
+      - name: day_of_week
+        role: dimension
+        description: 一周中的第几天，1=周一，7=周日。
+        alias: [星期几, 周几, 星期数]
+        sync: false
+
+      - name: day_name
+        role: dimension
+        description: 星期名称，如周一、周二等。
+        alias: [星期名称, 星期]
+        sync: true
+
+      - name: is_weekend
+        role: dimension
+        description: 是否周末，1表示是，0表示否。
+        alias: [是否周末, 周末]
+        sync: false
+
+      - name: is_holiday
+        role: dimension
+        description: 是否节假日，1表示是，0表示否。
+        alias: [是否节假日, 节假日]
+        sync: false
+
+      - name: holiday_name
+        role: dimension
+        description: 节假日名称，如元旦、春节等。
+        alias: [节假日名称, 节日]
+        sync: true
 
   - name: fact_order
     role: fact
-    description: 订单事实表，记录订单数量和金额等核心指标。
+    description: 订单事实表，记录订单详情，包括订单数量、金额、折扣等核心指标。
     columns:
       - name: order_id
         role: primary_key
         description: 订单唯一标识。
-        alias: [订单ID]
+        alias: [订单ID, 订单号]
         sync: false
 
       - name: customer_id
@@ -142,7 +220,7 @@ tables:
       - name: date_id
         role: foreign_key
         description: 关联时间维度的外键。
-        alias: [日期, 下单日期]
+        alias: [日期ID, 下单日期]
         sync: false
 
       - name: region_id
@@ -154,23 +232,72 @@ tables:
       - name: order_quantity
         role: measure
         description: 订单中商品的购买数量。
-        alias: [销量, 购买数量, 件数]
+        alias: [销量, 购买数量, 件数, 数量]
         sync: false
 
       - name: order_amount
         role: measure
-        description: 订单金额。
-        alias: [销售额, 订单金额, 收入]
+        description: 订单金额合计。
+        alias: [销售额, 订单金额, 成交金额, 收入]
         sync: false
+
+      - name: discount_amount
+        role: measure
+        description: 订单折扣金额。
+        alias: [折扣金额, 优惠金额, 减额]
+        sync: false
+
+      - name: shipping_fee
+        role: measure
+        description: 订单运费。
+        alias: [运费, 快递费, 配送费]
+        sync: false
+
+      - name: order_status
+        role: dimension
+        description: 订单状态，如已完成、已发货、已取消等。
+        alias: [订单状态, 状态]
+        sync: true
+
+      - name: payment_method
+        role: dimension
+        description: 支付方式，如微信支付、支付宝等。
+        alias: [支付方式, 付款方式]
+        sync: true
 
 metrics:
   - name: GMV
     description: 全称Gross Merchandise Value，表示所有订单的成交金额总和。
     relevant_columns:
       - fact_order.order_amount
-    alias: [成交总额, 订单总额]
+    alias: [成交总额, 订单总额, 总销售额]
+
   - name: AOV
-    description: 全称Average Order Value，表示所有订单的成交金额平均值。
+    description: 全称Average Order Value，表示平均每单的成交金额。
+    relevant_columns:
+      - fact_order.order_amount
+    alias: [平均订单金额, 客单价, 平均客单价]
+
+  - name: 总销量
+    description: 所有订单的商品销售总数量。
     relevant_columns:
       - fact_order.order_quantity
-    alias: [平均单价, 平均订单金额]
+    alias: [总销售数量, 总件数, 销售总量]
+
+  - name: 订单数
+    description: 订单总数量，即成交订单的笔数。
+    relevant_columns:
+      - fact_order.order_id
+    alias: [总订单数, 订单笔数, 下单数]
+
+  - name: 折扣总额
+    description: 所有订单的折扣金额总和。
+    relevant_columns:
+      - fact_order.discount_amount
+    alias: [总折扣, 优惠总额, 让利总额]
+
+  - name: 运费总额
+    description: 所有订单的运费总和。
+    relevant_columns:
+      - fact_order.shipping_fee
+    alias: [总运费, 配送费合计]

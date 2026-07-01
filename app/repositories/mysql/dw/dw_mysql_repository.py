@@ -20,7 +20,7 @@ class DWMySQLRepository:
     async def get_column_values(self, table_name, column_name, limit=10):
         sql = f"select distinct {column_name} from {table_name} limit {limit}"
         result = await self.session.execute(text(sql))
-        return [row[0] for row in result.fetchall()]
+        return [str(row[0]) for row in result.fetchall()]
 
     async def get_db_info(self) -> DBInfoState:
         sql = "select version()"

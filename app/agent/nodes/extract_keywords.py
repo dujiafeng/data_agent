@@ -1,3 +1,5 @@
+import re
+
 import jieba.analyse
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -51,7 +53,6 @@ async def _extract_by_jieba(query: str) -> list[str]:
 
 async def _extract_by_llm(
     query: str,
-    runtime: Runtime[DataAgentContext],
 ) -> list[str]:
     """使用微调后的小模型提取关键词（重量方案）"""
     prompt = PromptTemplate(
@@ -65,6 +66,21 @@ async def _extract_by_llm(
     raw = await chain.ainvoke({"query": query})
 
     # 按中文逗号分隔解析
+    raw = raw.strip()
+    logger.debug(f"LLM 原始返回: {repr(raw)}")
+
+    # 去除 <think>...</think> 思考标签（推理模型常见输出）
+    raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+
+    # 去除 markdown 代码块标记
+    raw = re.sub(r"```[\w]*\n?", "", raw).strip()
+
+    # 去除常见前缀，如 "关键词："、"输出："、"Output:" 等
+    raw = re.sub(r"^(关键词|输出|结果|keywords|output)\s*[:：]\s*", "", raw, flags=re.IGNORECASE).strip()
+
+    # 统一将英文逗号、换行、分号等替换为中文逗号后分割
+    raw = re.sub(r"[,;；\n]+", "，", raw)
+
     keywords = [kw.strip() for kw in raw.split("，") if kw.strip()]
 
     # 兜底
@@ -94,7 +110,7 @@ async def extract_keywords(state: DataAgentState, runtime: Runtime[DataAgentCont
         # 第二步：判断是否需要升级到 LLM
         if _is_complex_query(query, jieba_keywords):
             logger.info(f"查询较复杂，切换到 LLM 提取关键词: {query}")
-            keywords = await _extract_by_llm(query, runtime)
+            keywords = await _extract_by_llm(query)
             method = "llm"
         else:
             keywords = jieba_keywords
@@ -108,3 +124,25 @@ async def extract_keywords(state: DataAgentState, runtime: Runtime[DataAgentCont
         logger.error(f"抽取关键词失败: {e}")
         writer({"type": "progress", "step": "抽取关键词", "status": "error"})
         raise
+
+if __name__ == '__main__':
+    import asyncio
+    from langgraph.runtime import Runtime
+
+    async def main():
+        test_queries = [
+            "查询华北地区的销售总额",
+            "上个月北京地区各产品线的销售额和利润率分别是多少",
+            "今年的总营收",
+            "统计一下2026年各个省各个品类的销售数据，按照省份排序"
+        ]
+
+        for query in test_queries:
+            state = DataAgentState(query=query)
+            runtime = Runtime(context={}, stream_writer=lambda msg: print(f"  [stream] {msg}"))
+            print(f"\n{'='*60}")
+            print(f"Query: {query}")
+            result = await extract_keywords(state, runtime)
+            print(f"Result: {result}")
+
+    asyncio.run(main())
