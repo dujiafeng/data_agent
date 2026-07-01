@@ -7,7 +7,7 @@ class ColumnInfo:
     name: str
     type: str
     role: str
-    examples: list[Any]
+    examples: list[str]
     description: str
     alias: list[str]
     table_id: str
